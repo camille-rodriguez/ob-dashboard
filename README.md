@@ -3,13 +3,20 @@ Web dashboard to see Orangeboxes' availability
 
 ## How to run
 
-### 1. Install dependencies
+### 1. Create and activate a virtual environment
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+### 2. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Configure environment variables
+### 3. Configure environment variables
 
 Copy the example configuration file and fill in your values:
 
@@ -33,7 +40,7 @@ export MAAS_URL=http://10.0.0.1:5240/MAAS
 export MAAS_API_KEY=consumer_key:token_key:token_secret
 ```
 
-### 3. Start the application
+### 4. Start the application
 
 ```bash
 python app.py
@@ -41,7 +48,7 @@ python app.py
 
 Open your browser at <http://localhost:5000>.
 
-### 4. Run the tests
+### 5. Run the tests
 
 ```bash
 python -m pytest tests/
