@@ -15,11 +15,11 @@ _MAAS_URL = os.environ.get("MAAS_URL", "")  # e.g. http://10.0.0.1:5240/MAAS
 MACHINE_STATES = ("ready", "deployed", "broken")
 
 
-def _build_auth() -> Optional[OAuth1]:
-    """Build an OAuth1 session from the MAAS API key, or return None."""
-    if not _MAAS_API_KEY:
+def _build_auth(api_key: str) -> Optional[OAuth1]:
+    """Build an OAuth1 object from a MAAS API key string, or return None."""
+    if not api_key:
         return None
-    parts = _MAAS_API_KEY.split(":")
+    parts = api_key.split(":")
     if len(parts) != 3:
         return None
     consumer_key, token_key, token_secret = parts
@@ -53,17 +53,7 @@ def get_maas_status(
         result["error"] = "MAAS_URL is not configured."
         return result
 
-    auth: Optional[OAuth1] = None
-    if api_key:
-        parts = api_key.split(":")
-        if len(parts) == 3:
-            consumer_key, token_key, token_secret = parts
-            auth = OAuth1(
-                client_key=consumer_key,
-                resource_owner_key=token_key,
-                resource_owner_secret=token_secret,
-                signature_method="PLAINTEXT",
-            )
+    auth: Optional[OAuth1] = _build_auth(api_key)
 
     api_base = maas_url.rstrip("/") + "/api/2.0"
     machines_url = api_base + "/machines/"

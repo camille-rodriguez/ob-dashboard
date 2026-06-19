@@ -1,8 +1,6 @@
 """Tests for the Orangebox Dashboard application."""
 
-import importlib
 import sys
-import types
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -17,7 +15,8 @@ class TestIsHostReachable(unittest.TestCase):
             del sys.modules["network_utils"]
 
     def _import(self):
-        import importlib.util, pathlib
+        import importlib.util
+        import pathlib
         spec = importlib.util.spec_from_file_location(
             "network_utils",
             pathlib.Path(__file__).parent.parent / "network_utils.py",
@@ -63,7 +62,8 @@ class TestIsHostReachable(unittest.TestCase):
 # ---------------------------------------------------------------------------
 class TestGetMaasStatus(unittest.TestCase):
     def _import(self):
-        import importlib.util, pathlib
+        import importlib.util
+        import pathlib
         spec = importlib.util.spec_from_file_location(
             "maas_client",
             pathlib.Path(__file__).parent.parent / "maas_client.py",
@@ -145,7 +145,8 @@ class TestFlaskApp(unittest.TestCase):
                 "error": None,
                 "machine_counts": {"ready": 3, "deployed": 2, "broken": 0},
             }
-        import importlib.util, pathlib
+        import importlib.util
+        import pathlib
         spec = importlib.util.spec_from_file_location(
             "app",
             pathlib.Path(__file__).parent.parent / "app.py",
