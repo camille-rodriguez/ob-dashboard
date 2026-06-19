@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 from pathlib import Path
 from flask import Flask, render_template
 
@@ -35,6 +36,11 @@ def _parse_hosts(value: str) -> list[str]:
         if host:
             hosts.append(host)
     return hosts
+
+
+def _alphanum_key(value: str) -> list:
+    parts = re.split(r"(\d+)", value.lower())
+    return [int(part) if part.isdigit() else part for part in parts]
 
 
 def _load_orangeboxes_file(file_path: str) -> list[dict]:
@@ -99,6 +105,11 @@ def index():
     cfg = _get_config()
     inventory = cfg["orangeboxes"]
 
+    sorted_inventory = sorted(
+        inventory,
+        key=lambda box: _alphanum_key(box["hostname"] or box["ip"]),
+    )
+
     orangeboxes = [
         {
             "hostname": box["hostname"],
@@ -106,7 +117,7 @@ def index():
             "probe": box["ip"] or box["hostname"],
             "powered_on": is_host_reachable(box["ip"] or box["hostname"]),
         }
-        for box in inventory
+        for box in sorted_inventory
         if box["ip"] or box["hostname"]
     ]
 
