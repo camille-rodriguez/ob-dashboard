@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Orangebox Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.25rem;
+      color: #f4a62a;
+      letter-spacing: 0.05em;
+    }
+
+    .subtitle {
+      color: #888;
+      margin-bottom: 2.5rem;
+      font-size: 0.9rem;
+    }
+
+    .cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      justify-content: center;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      min-width: 220px;
+      flex: 1 1 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .card-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #888;
+    }
+
+    .badge {
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 0.4rem 1.2rem;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-on  { background: #14532d; color: #4ade80; border: 1px solid #166534; }
+    .badge-off { background: #450a0a; color: #f87171; border: 1px solid #7f1d1d; }
+    .badge-ok  { background: #1e3a5f; color: #60a5fa; border: 1px solid #1d4ed8; }
+    .badge-err { background: #450a0a; color: #f87171; border: 1px solid #7f1d1d; }
+
+    .host-label {
+      font-size: 0.75rem;
+      color: #666;
+      word-break: break-all;
+    }
+
+    .error-msg {
+      font-size: 0.75rem;
+      color: #f87171;
+      text-align: center;
+      max-width: 260px;
+    }
+
+    .machine-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    .machine-table th {
+      color: #888;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.25rem 0.75rem;
+      border-bottom: 1px solid #2a2a4a;
+      text-align: left;
+    }
+
+    .machine-table td {
+      padding: 0.5rem 0.75rem;
+    }
+
+    .count-ready    { color: #4ade80; font-weight: 700; font-size: 1.4rem; }
+    .count-deployed { color: #60a5fa; font-weight: 700; font-size: 1.4rem; }
+    .count-deploying { color: #fbbf24; font-weight: 700; font-size: 1.4rem; }
+    .count-allocated { color: #a78bfa; font-weight: 700; font-size: 1.4rem; }
+    .count-broken   { color: #f87171; font-weight: 700; font-size: 1.4rem; }
+
+    footer {
+      margin-top: 3rem;
+      color: #444;
+      font-size: 0.75rem;
+    }
+
+    a.refresh-btn {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 0.5rem 1.5rem;
+      background: #2a2a4a;
+      color: #a0a0c0;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    a.refresh-btn:hover { background: #3a3a6a; }
+  </style>
+</head>
+<body>
+  <h1>🟠 Orangebox Dashboard</h1>
+  <p class="subtitle">
+    {% if ob_host %}Host: {{ ob_host }}{% else %}Configure <code>OB_HOST</code> to monitor a specific host{% endif %}
+  </p>
+
+  <div class="cards">
+
+    <!-- Power Status -->
+    <div class="card">
+      <span class="card-title">Power Status</span>
+      {% if powered_on %}
+        <span class="badge badge-on">⚡ ON</span>
+      {% else %}
+        <span class="badge badge-off">💤 OFF / Unreachable</span>
+      {% endif %}
+      {% if ob_host %}
+        <span class="host-label">{{ ob_host }}</span>
+      {% else %}
+        <span class="host-label">OB_HOST not set</span>
+      {% endif %}
+    </div>
+
+    <!-- MAAS Reachability -->
+    <div class="card">
+      <span class="card-title">MAAS API</span>
+      {% if maas_reachable %}
+        <span class="badge badge-ok">✅ Reachable</span>
+      {% else %}
+        <span class="badge badge-err">❌ Unreachable</span>
+      {% endif %}
+      {% if maas_error %}
+        <span class="error-msg">{{ maas_error }}</span>
+      {% endif %}
+    </div>
+
+    <!-- Machine Counts -->
+    <div class="card">
+      <span class="card-title">MAAS Machines</span>
+      <table class="machine-table">
+        <thead>
+          <tr>
+            <th>State</th>
+            <th>Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Ready</td>
+            <td class="count-ready">{{ machine_counts.ready }}</td>
+          </tr>
+          <tr>
+            <td>Deployed</td>
+            <td class="count-deployed">{{ machine_counts.deployed }}</td>
+          </tr>
+          <tr>
+            <td>Deploying</td>
+            <td class="count-deploying">{{ machine_counts.deploying }}</td>
+          </tr>
+          <tr>
+            <td>Allocated</td>
+            <td class="count-allocated">{{ machine_counts.allocated }}</td>
+          </tr>
+          <tr>
+            <td>Broken</td>
+            <td class="count-broken">{{ machine_counts.broken }}</td>
+          </tr>
+        </tbody>
+      </table>
+      {% if not maas_reachable and not maas_error %}
+        <span class="error-msg">Configure MAAS_URL and MAAS_API_KEY.</span>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <a class="refresh-btn" href="/">↻ Refresh</a>
+
+  <footer>ob-dashboard • data fetched live on each page load</footer>
+</body>
+</html>
