@@ -1,34 +1,42 @@
 """MAAS API client for querying machine states."""
 
 import os
+import time
+import uuid
 from typing import Optional
 from collections import Counter
+from urllib.parse import quote
 
 import requests
-from requests_oauthlib import OAuth1
 
 
-# MAAS API key format: "<consumer_key>:<token_key>:<token_secret>"
+# MAAS API key format: "<consumer_key>:<consumer_token>:<secret>"
 _MAAS_API_KEY = os.environ.get("MAAS_API_KEY", "")
 _MAAS_URL = os.environ.get("MAAS_URL", "")  # e.g. http://10.0.0.1:5240/MAAS
 
-MACHINE_STATES = ("ready", "deployed", "broken")
+MACHINE_STATES = ("ready", "deployed", "deploying", "allocated", "broken")
 
 
-def _build_auth(api_key: str) -> Optional[OAuth1]:
-    """Build an OAuth1 object from a MAAS API key string, or return None."""
+def _build_auth_headers(api_key: str) -> Optional[dict]:
+    """Build a MAAS OAuth 1.0 PLAINTEXT Authorization header, or return None."""
+    api_key = api_key.strip()
     if not api_key:
         return None
-    parts = api_key.split(":")
-    if len(parts) != 3:
+    parts = [part.strip() for part in api_key.split(":", 2)]
+    if len(parts) != 3 or not all(parts):
         return None
-    consumer_key, token_key, token_secret = parts
-    return OAuth1(
-        client_key=consumer_key,
-        resource_owner_key=token_key,
-        resource_owner_secret=token_secret,
-        signature_method="PLAINTEXT",
+    consumer_key, consumer_token, secret = parts
+    oauth_signature = quote(f"&{secret}", safe="")
+    header_value = (
+        f'OAuth oauth_version="1.0",'
+        f' oauth_signature_method="PLAINTEXT",'
+        f' oauth_consumer_key="{consumer_key}",'
+        f' oauth_token="{consumer_token}",'
+        f' oauth_signature="{oauth_signature}",'
+        f' oauth_nonce="{uuid.uuid4().hex}",'
+        f' oauth_timestamp="{int(time.time())}"'
     )
+    return {"Authorization": header_value}
 
 
 def get_maas_status(
@@ -40,7 +48,13 @@ def get_maas_status(
         {
             "reachable": bool,
             "error": str | None,
-            "machine_counts": {"ready": int, "deployed": int, "broken": int},
+            "machine_counts": {
+                "ready": int,
+                "deployed": int,
+                "deploying": int,
+                "allocated": int,
+                "broken": int,
+            },
         }
     """
     result: dict = {
@@ -53,13 +67,20 @@ def get_maas_status(
         result["error"] = "MAAS_URL is not configured."
         return result
 
-    auth: Optional[OAuth1] = _build_auth(api_key)
+    headers = _build_auth_headers(api_key)
+    if api_key and headers is None:
+        result["error"] = (
+            "MAAS_API_KEY is not configured correctly. Expected "
+            "<consumer_key>:<consumer_token>:<secret>."
+        )
+        return result
 
     api_base = maas_url.rstrip("/") + "/api/2.0"
     machines_url = api_base + "/machines/"
 
     try:
-        resp = requests.get(machines_url, auth=auth, timeout=timeout)
+        resp = requests.get(machines_url, headers=headers, timeout=timeout)
+        print(f"[resp] {machines_url}")
         resp.raise_for_status()
         result["reachable"] = True
         machines = resp.json()
@@ -75,7 +96,11 @@ def get_maas_status(
         result["error"] = "MAAS API request timed out."
     except requests.exceptions.HTTPError as exc:
         result["reachable"] = True  # server responded, but with an error
-        result["error"] = f"MAAS API error: {exc}"
+        body = exc.response.text[:500] if exc.response is not None else ""
+        status_code = exc.response.status_code if exc.response is not None else "unknown"
+        print(f"[maas_client] HTTP {status_code} from {machines_url}")
+        print(f"[maas_client] Response body: {body}")
+        result["error"] = f"MAAS API error: {exc}" + (f" — {body}" if body else "")
     except Exception as exc:  # noqa: BLE001
         result["error"] = f"Unexpected error: {exc}"
 

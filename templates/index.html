@@ -109,6 +109,8 @@
 
     .count-ready    { color: #4ade80; font-weight: 700; font-size: 1.4rem; }
     .count-deployed { color: #60a5fa; font-weight: 700; font-size: 1.4rem; }
+    .count-deploying { color: #fbbf24; font-weight: 700; font-size: 1.4rem; }
+    .count-allocated { color: #a78bfa; font-weight: 700; font-size: 1.4rem; }
     .count-broken   { color: #f87171; font-weight: 700; font-size: 1.4rem; }
 
     footer {
@@ -185,6 +187,14 @@
           <tr>
             <td>Deployed</td>
             <td class="count-deployed">{{ machine_counts.deployed }}</td>
+          </tr>
+          <tr>
+            <td>Deploying</td>
+            <td class="count-deploying">{{ machine_counts.deploying }}</td>
+          </tr>
+          <tr>
+            <td>Allocated</td>
+            <td class="count-allocated">{{ machine_counts.allocated }}</td>
           </tr>
           <tr>
             <td>Broken</td>

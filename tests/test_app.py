@@ -143,7 +143,13 @@ class TestFlaskApp(unittest.TestCase):
             maas_status = {
                 "reachable": True,
                 "error": None,
-                "machine_counts": {"ready": 3, "deployed": 2, "broken": 0},
+                "machine_counts": {
+                    "ready": 3,
+                    "deployed": 2,
+                    "deploying": 0,
+                    "allocated": 0,
+                    "broken": 0,
+                },
             }
         import importlib.util
         import pathlib
@@ -170,7 +176,13 @@ class TestFlaskApp(unittest.TestCase):
                     return_value={
                         "reachable": True,
                         "error": None,
-                        "machine_counts": {"ready": 1, "deployed": 0, "broken": 0},
+                        "machine_counts": {
+                            "ready": 1,
+                            "deployed": 0,
+                            "deploying": 0,
+                            "allocated": 0,
+                            "broken": 0,
+                        },
                     },
                 ),
                 patch.dict("os.environ", {"OB_HOST": "10.0.0.1"}),
@@ -198,7 +210,13 @@ class TestFlaskApp(unittest.TestCase):
                     return_value={
                         "reachable": True,
                         "error": None,
-                        "machine_counts": {"ready": 0, "deployed": 0, "broken": 0},
+                        "machine_counts": {
+                            "ready": 0,
+                            "deployed": 0,
+                            "deploying": 0,
+                            "allocated": 0,
+                            "broken": 0,
+                        },
                     },
                 ),
                 patch.dict("os.environ", {"OB_HOST": "10.0.0.1"}),
@@ -217,7 +235,13 @@ class TestFlaskApp(unittest.TestCase):
                     return_value={
                         "reachable": False,
                         "error": "Cannot connect",
-                        "machine_counts": {"ready": 0, "deployed": 0, "broken": 0},
+                        "machine_counts": {
+                            "ready": 0,
+                            "deployed": 0,
+                            "deploying": 0,
+                            "allocated": 0,
+                            "broken": 0,
+                        },
                     },
                 ),
                 patch.dict("os.environ", {"OB_HOST": "10.0.0.1"}),
@@ -229,7 +253,13 @@ class TestFlaskApp(unittest.TestCase):
         maas_status = {
             "reachable": True,
             "error": None,
-            "machine_counts": {"ready": 5, "deployed": 3, "broken": 1},
+            "machine_counts": {
+                "ready": 5,
+                "deployed": 3,
+                "deploying": 2,
+                "allocated": 4,
+                "broken": 1,
+            },
         }
         app = self._make_app(maas_status=maas_status)
         app.config["TESTING"] = True

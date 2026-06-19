@@ -1,7 +1,25 @@
 """Flask web application – Orangebox Dashboard."""
 
 import os
+from pathlib import Path
 from flask import Flask, render_template
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    def load_dotenv() -> None:
+        env_path = Path(__file__).with_name(".env")
+        if not env_path.exists():
+            return
+        for raw_line in env_path.read_text().splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip())
+
+
+load_dotenv()
 
 from network_utils import is_host_reachable
 from maas_client import get_maas_status
