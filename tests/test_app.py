@@ -138,7 +138,7 @@ class TestGetMaasStatus(unittest.TestCase):
 # Flask app tests
 # ---------------------------------------------------------------------------
 class TestFlaskApp(unittest.TestCase):
-    def _make_app(self, powered_on=True, maas_status=None):
+    def _make_app(self, powered_on=True, maas_status=None, ob_hosts=None):
         if maas_status is None:
             maas_status = {
                 "reachable": True,
@@ -185,10 +185,45 @@ class TestFlaskApp(unittest.TestCase):
                         },
                     },
                 ),
-                patch.dict("os.environ", {"OB_HOST": "10.0.0.1"}),
+                patch.dict(
+                    "os.environ",
+                    {"ORANGEBOXES_FILE": "missing-orangeboxes.json", "OB_HOST": "10.0.0.1"},
+                ),
             ):
                 rv = client.get("/")
         self.assertEqual(rv.status_code, 200)
+
+    def test_index_lists_multiple_orangeboxes(self):
+        app = self._make_app()
+        app.config["TESTING"] = True
+        with app.test_client() as client:
+            with (
+                patch("network_utils.is_host_reachable", side_effect=[True, False]),
+                patch(
+                    "maas_client.get_maas_status",
+                    return_value={
+                        "reachable": True,
+                        "error": None,
+                        "machine_counts": {
+                            "ready": 1,
+                            "deployed": 0,
+                            "deploying": 0,
+                            "allocated": 0,
+                            "broken": 0,
+                        },
+                    },
+                ),
+                patch.dict(
+                    "os.environ",
+                    {
+                        "ORANGEBOXES_FILE": "missing-orangeboxes.json",
+                        "OB_HOSTS": "10.0.0.1,10.0.0.2",
+                    },
+                ),
+            ):
+                rv = client.get("/")
+        self.assertIn(b"10.0.0.1", rv.data)
+        self.assertIn(b"10.0.0.2", rv.data)
 
     def test_healthz_returns_ok(self):
         app = self._make_app()
@@ -219,10 +254,13 @@ class TestFlaskApp(unittest.TestCase):
                         },
                     },
                 ),
-                patch.dict("os.environ", {"OB_HOST": "10.0.0.1"}),
+                patch.dict(
+                    "os.environ",
+                    {"ORANGEBOXES_FILE": "missing-orangeboxes.json", "OB_HOST": "10.0.0.1"},
+                ),
             ):
                 rv = client.get("/")
-        self.assertIn(b"ON", rv.data)
+        self.assertIn(b"On", rv.data)
 
     def test_index_shows_powered_off(self):
         app = self._make_app(powered_on=False)
@@ -244,10 +282,13 @@ class TestFlaskApp(unittest.TestCase):
                         },
                     },
                 ),
-                patch.dict("os.environ", {"OB_HOST": "10.0.0.1"}),
+                patch.dict(
+                    "os.environ",
+                    {"ORANGEBOXES_FILE": "missing-orangeboxes.json", "OB_HOST": "10.0.0.1"},
+                ),
             ):
                 rv = client.get("/")
-        self.assertIn(b"OFF", rv.data)
+        self.assertIn(b"Off / Unreachable", rv.data)
 
     def test_index_shows_machine_counts(self):
         maas_status = {

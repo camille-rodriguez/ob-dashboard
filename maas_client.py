@@ -14,7 +14,7 @@ import requests
 _MAAS_API_KEY = os.environ.get("MAAS_API_KEY", "")
 _MAAS_URL = os.environ.get("MAAS_URL", "")  # e.g. http://10.0.0.1:5240/MAAS
 
-MACHINE_STATES = ("ready", "deployed", "deploying", "allocated", "broken")
+MACHINE_STATES = ("ready", "allocated", "broken", "deploying", "deployed")
 
 
 def _build_auth_headers(api_key: str) -> Optional[dict]:
