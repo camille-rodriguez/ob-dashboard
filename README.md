@@ -6,7 +6,7 @@ Web dashboard to see Orangeboxes' availability
 ### 1. Create and activate a virtual environment
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 ```
 
@@ -26,17 +26,30 @@ cp config.example.env .env
 
 | Variable | Description | Default |
 |---|---|---|
-| `OB_HOST` | IP address or hostname of the orangebox (used for ping/power check) | _(none)_ |
+| `ORANGEBOXES_FILE` | Path to JSON file listing orangeboxes with hostname and IP | `orangeboxes.json` |
+| `OB_HOST` | IP address or hostname of one orangebox (used for ping/power check) | _(none)_ |
+| `OB_HOSTS` | Optional fallback comma-separated list of orangeboxes when inventory file is unavailable | _(none)_ |
 | `MAAS_URL` | Base URL of the MAAS server, e.g. `http://10.0.0.1:5240/MAAS` | _(none)_ |
 | `MAAS_API_KEY` | MAAS API key in `consumer_key:token_key:token_secret` format – obtain from MAAS UI → your account → API keys | _(none)_ |
 | `PORT` | Port the web server listens on | `5000` |
 | `FLASK_DEBUG` | Set to `1` to enable Flask debug mode (do not use in production) | `0` |
 
+Example `orangeboxes.json`:
+
+```json
+[
+	{"hostname": "ob-01", "ip": "172.27.24.1"},
+	{"hostname": "ob-02", "ip": "192.168.250.24"}
+]
+```
+
 Export the variables before starting the app:
 
 ```bash
-export OB_HOST=10.0.0.1
-export MAAS_URL=http://10.0.0.1:5240/MAAS
+export ORANGEBOXES_FILE=orangeboxes.json
+export OB_HOST=172.27.24.1
+export OB_HOSTS=172.27.24.1,172.27.24.2
+export MAAS_URL=http://172.27.24.1:5240/MAAS
 export MAAS_API_KEY=consumer_key:token_key:token_secret
 ```
 
